@@ -1,0 +1,71 @@
+name: Autograding Tests
+'on':
+- push
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Test 1
+      id: test-1
+      uses: classroom-resources/autograding-io-grader@v1
+      with:
+        test-name: Test 1
+        setup-command: make
+        command: "./Q 1 2 x  x  3 4 x"
+        input: ''
+        expected-output: |+
+          dequeing 1
+          dequeing 2
+          dequeing 3
+
+        comparison-method: contains
+        timeout: 10
+        max-score: 10
+    - name: Test empty
+      id: test-empty
+      uses: classroom-resources/autograding-io-grader@v1
+      with:
+        test-name: Test empty
+        setup-command: make
+        command: "./Q 1 x x  2 x  3 4 x"
+        input: ''
+        expected-output: |+
+          dequeing 1
+          Empty queue
+          dequeing 2
+          dequeing 3
+
+        comparison-method: contains
+        timeout: 10
+        max-score: 10
+    - name: Test nothin
+      id: test-nothin
+      uses: classroom-resources/autograding-io-grader@v1
+      with:
+        test-name: Test nothin
+        setup-command: make
+        command: "./Q x x 1 x"
+        input: ''
+        expected-output: |-
+          Empty queue
+          Empty queue
+          dequeing 1
+        comparison-method: contains
+        timeout: 10
+        max-score: 10
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        TEST-1_RESULTS: "${{steps.test-1.outputs.result}}"
+        TEST-EMPTY_RESULTS: "${{steps.test-empty.outputs.result}}"
+        TEST-NOTHIN_RESULTS: "${{steps.test-nothin.outputs.result}}"
+      with:
+        runners: test-1,test-empty,test-nothin
